@@ -32,7 +32,7 @@ else
     STSthresh = 100; %only for analysis
     dGCL = 80/zfac;  % dicke gcl layer
     dML = round(265/zfac / 3)*3; % dicke ML layer
-    NodesPerCell    = 25; %%%%% achtung 28
+    NodesPerCell    = 25;
     thicknesses = round([dSGCL,dGCL,dML/3,dML/3,dML/3]);
 end
 NodesStDev      = 0;%3.5;
@@ -43,15 +43,10 @@ pointcol=colorme({'light blue','pink','violett','orange'});
 DGsize = [350 350 round(dML+dGCL+dSGCL)];
 layerZ = cumsum(thicknesses);
 %% point densities and creation
-% a=-20:700
-% b = 270./(1+exp(-0.15*(a-7))) + 0.1*a
-% figure;plot(a,b),hold on,plot(56:91,zeros(91-56+1,1),'r'),plot((56:91)+77,zeros(91-56+1,1),'b')
 CsRV = [];
 CsAAV = [];
 % this is the GCL distribution
 Pointdens{1} = (1:100).^2;
-% Pointdens{1} = ((0:100) - 50).^2;   % minus defines where midpoint is
-% Pointdens{1} = ones(1,100);     % CAUTION! ONLY IF POINTS ARE THEN DISTRIBUTED VIA giveGCLpoints2 !!!!!!!!!
 Pointdens{1} = cumsum(Pointdens{1}/sum(Pointdens{1}));
 % this is the IML random point distribution
 Pointdens{2} = ones(1,101);%((0:100) - 10).^2;   % minus defines where midpoint is
@@ -70,21 +65,11 @@ Pointdens{4} = Pointdens{4}/max(Pointdens{4}) + 0.1;  % add also some more point
 Pointdens{4} = Pointdens{4}/max(Pointdens{4});  % 
 Pointdens{4} = Pointdens{4} .* tmpdens;
 Pointdens{4} = cumsum(Pointdens{4} / sum(Pointdens{4}));
-
 Pointdens{5} = Pointdens{2};
 Pointdens{5} = ((0:100) - 100).^2;   % minus defines where midpoint is
 Pointdens{5} = Pointdens{5}/max(Pointdens{5});  % add also some more points in the midth
-% Pointdens{4} = Pointdens{4}/max(Pointdens{4});  % 
-% Pointdens{4} = Pointdens{4} .* tmpdens;
 Pointdens{5} = cumsum(Pointdens{5} / sum(Pointdens{5}));
-% % this is the IML directed distribution
-% % Pointdens{5} = ((0:100) - 70).^2;   % minus defines where midpoint is
-% % Pointdens{5} = Pointdens{5}/max(Pointdens{5}) + 0.6;  % add also some more points in the midth
-% % Pointdens{5} = ones(1,101) ;  % add also some more points in the midth
-% Pointdens{5} = -((0:100) - 60).^2;   % minus defines where midpoint is
-% Pointdens{5} = Pointdens{5} - min(Pointdens{5});
-% Pointdens{5} = Pointdens{5}/max(Pointdens{5}) + 0.3;  % add also some more points in the midth
-% Pointdens{5} = cumsum(Pointdens{5} / sum(Pointdens{5}));
+
 if plotit
     figure,hold all
     title('Point distributions')
@@ -104,19 +89,6 @@ Nodes{1}   = round(0.25 * TotalPoints);
 Nodes{2}   = round(0.14 * TotalPoints);
 Nodes{3}   = round(0.12 * TotalPoints);
 Nodes{4}   = round(0.49 * TotalPoints);
-% Nodes{5}  = round(0.40 * TotalPoints);
-
-%     layerZ(5) = [];  % do not make difference between oml and ooml
-%     layerZ(1) = 0;  % do not make difference between SGCL and GCL
-
-% % this is the standard procedure
-% for l = 1:5
-%     sizeL = [DGsize(1),DGsize(2) sum(thicknesses(1:l+1))-sum(thicknesses(1:l))];
-%     [x, y, z] = ind2sub(sizeL,randperm(sizeL(1)*sizeL(2)*sizeL(3),Nodes{l}));
-%     z = z + sum(thicknesses(1:l));
-%     %     M(x, y, z) = true;
-%     pts{l} = [x',y',z'];
-% end
 
 % figure,hold all
 for l = 1:4
@@ -199,8 +171,6 @@ for t=1:N_cells
     %
     for l = 2:4
         yes = inpolyhedron(conepoly,pts{l},'FLIPNORMALS',1);
-        %         sum(yes)
-%         h=plot3(pts{l}(yes,1),pts{l}(yes,2),pts{l}(yes,3),'x');
         availablepts{l} = pts{l}(yes,:);
     end
     
@@ -271,8 +241,6 @@ load(sprintf('D:/%s_AAVart_young.mat',animal),'tree')
 for t = 1:numel(tree)
     PL = Pvec_tree(tree{t});
     [tree{t},AAVcount(t)] = prune_tree(tree{t},thresh);%,setdiff(1:5,find(strcmp(tree{t}.rnames,'OML'))));%,'-s');
-%     [tree{t},count] = prune_tree(tree{t},Inf,1:2); %prune SGCL and GCL branches
-%     AAVcount(t) = AAVcount(t) + count;
 end
 if analyzesubsteps
     dstruct = Analyze_Morph_regionally(tree,{'Total','IML','MML','OML','outside'},[],'-o-g-c-NPS',[],STSthresh);
@@ -335,11 +303,8 @@ end
 dstruct = Analyze_Morph_regionally(tree,{'Total','IML','MML','OML','outside'},[],'-o-g-c-NPS',[],STSthresh);
 save(sprintf('D:/%s_AAVart_old_pruned.mat',animal),'tree','dstruct','firsttree','AAVconestruct','Nodes','Pointdens','DGsize','thicknesses','layerZ')
 save_tree(tree,fullfile(targetfolder,sprintf('%s_AAVart_old_pruned.mtr',animal)))
-% figure;plot_tree(tree{t},tree{t}.R),hold on
-% patch(gcl,'facealpha',0.2,'edgealpha',0.1)
-% line(gcl.vertices(:,1),gcl.vertices(:,2),gcl.vertices(:,3),'k')
-%% RV tree.........
 
+%% RV tree
 if skipRV
     return
 end
@@ -394,8 +359,6 @@ for t = 1:N_cells
     if plotit && t == 1
         
         figure;hold on
-        %             p=patch(conepoly,'facealpha',0.1,'edgecolor','k','edgealpha',0.2,'facecolor',[1 0.5 0]),hold on
-        %             plot3(cone(:,1),cone(:,2),cone(:,3),'x')
         hold all
         
         hg = patch(gcl,'facealpha',0.2,'edgealpha',0);
@@ -423,9 +386,6 @@ for t = 1:N_cells
         tree{t} = preview_tree(tree{t},'-r-j');  % achtung, jitter darf nach region zuordnung kommen!
     end
     if plotit && t == 1
-%         for l = 1:4
-%             hp(l) = plot3(trueusedpts{t}{l}(:,1),trueusedpts{t}{l}(:,2),trueusedpts{t}{l}(:,3),'.','markersize',16,'Color',pointcol{l});
-%         end
         patch(conestruct{t}.gcl,'facealpha',0.2,'edgealpha',0)
         hl(1)=line(conestruct{t}.gcl.vertices([1 2 3 4 1],1),conestruct{t}.gcl.vertices([1 2 3 4 1],2),conestruct{t}.gcl.vertices([1 2 3 4 1],3),'Color','k','LineWidth',2);
         hl(2)=line(conestruct{t}.gcl.vertices([5 6 7 8 5],1),conestruct{t}.gcl.vertices([5 6 7 8 5],2),conestruct{t}.gcl.vertices([5 6 7 8 5],3),'Color','k','LineWidth',2);
@@ -469,10 +429,7 @@ load(sprintf('D:/%s_RVart.mat',animal))
 
 for t = 1:numel(tree)
     PL = Pvec_tree(tree{t});
-%     thresh
     [tree{t},RVcount(t)] = prune_tree(tree{t},thresh,[]);%,setdiff(1:5,find(strcmp(tree{t}.rnames,'OML')))); %prune everywhere except OML
-%     [tree{t},count] = prune_tree(tree{t},Inf,1:2); %prune SGCL and GCL branches
-%     RVcount(t) = RVcount(t) + count;
 end
 dstruct = Analyze_Morph_regionally(tree,{'Total','IML','MML','OML','outside'},[],'-o-g-c-NPS',[],STSthresh);
 save(sprintf('D:/%s_RVart_pruned.mat',animal),'tree','dstruct','conestruct')
